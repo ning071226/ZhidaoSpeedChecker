@@ -1,14 +1,19 @@
 package com.example.zhidaospeedchecker
 
 import android.app.Activity
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
 import android.os.Bundle
 import android.provider.Settings
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 
@@ -52,6 +57,14 @@ class MainActivity : Activity() {
                     ?: "无障碍扫描服务尚未开启。请先进入无障碍设置，找到“知到倍速助手播放器扫描”并开启，然后返回知到播放器，再切回本工具扫描。"
             }
         })
+        layout.addView(Button(this).apply {
+            text = "复制全部扫描结果"
+            setOnClickListener {
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("扫描结果", status.text))
+                Toast.makeText(this@MainActivity, "已复制全部内容，可以粘贴发送给 ChatGPT。", Toast.LENGTH_LONG).show()
+            }
+        })
         listOf(2.0f, 2.5f, 3.0f, 4.0f).forEach { speed ->
             layout.addView(Button(this).apply {
                 text = "尝试设置为 ${speed}×"
@@ -63,7 +76,14 @@ class MainActivity : Activity() {
             textSize = 13f
             setPadding(0, 20, 0, 0)
         })
-        setContentView(layout)
+        val scrollView = ScrollView(this).apply {
+            isFillViewport = true
+            addView(layout, ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ))
+        }
+        setContentView(scrollView)
     }
 
     private fun refreshSessions() {
