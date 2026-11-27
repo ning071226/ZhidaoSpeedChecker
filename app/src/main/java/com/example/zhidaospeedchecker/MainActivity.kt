@@ -18,66 +18,67 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(28, 36, 28, 24)
         }
-        val title = TextView(this).apply {
-            text = "知到倍速助手"
-            textSize = 25f
-        }
+        layout.addView(TextView(this).apply {
+            text = "知到倍速助手（播放器扫描测试版）"
+            textSize = 23f
+        })
         status = TextView(this).apply {
-            textSize = 16f
-            text = "第一步：先开启本工具的“通知使用权”。"
-            setPadding(0, 24, 0, 24)
+            textSize = 15f
+            text = "先开启通知使用权。播放器扫描需要另行开启无障碍权限。"
+            setPadding(0, 20, 0, 20)
         }
-        val permission = Button(this).apply {
+        layout.addView(status)
+        layout.addView(Button(this).apply {
             text = "打开通知使用权设置"
-            setOnClickListener {
-                startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-            }
-        }
-        val refresh = Button(this).apply {
+            setOnClickListener { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) }
+        })
+        layout.addView(Button(this).apply {
+            text = "打开无障碍服务设置"
+            setOnClickListener { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
+        })
+        layout.addView(Button(this).apply {
             text = "检查媒体会话"
             setOnClickListener { refreshSessions() }
-        }
-        layout.addView(title)
-        layout.addView(status)
-        layout.addView(permission)
-        layout.addView(refresh)
-
+        })
+        layout.addView(Button(this).apply {
+            text = "扫描当前播放器界面"
+            setOnClickListener {
+                val scanner = PlayerScanAccessibilityService.instance
+                status.text = scanner?.scanVisiblePage()
+                    ?: "无障碍扫描服务尚未开启。请先进入无障碍设置，找到“知到倍速助手播放器扫描”并开启，然后返回知到播放器，再切回本工具扫描。"
+            }
+        })
         listOf(2.0f, 2.5f, 3.0f, 4.0f).forEach { speed ->
             layout.addView(Button(this).apply {
                 text = "尝试设置为 ${speed}×"
                 setOnClickListener { applySpeed(speed) }
             })
         }
-        val note = TextView(this).apply {
-            text = "使用方法：先开启权限，再打开知到并播放课程，返回本工具点击“检查媒体会话”。如果检测到媒体会话，再尝试选择倍速。知到若不开放外部倍速控制，这些按钮可能无法生效。"
-            textSize = 14f
-            setPadding(0, 24, 0, 0)
-        }
-        layout.addView(note)
+        layout.addView(TextView(this).apply {
+            text = "说明：扫描仅读取当前屏幕可访问的文字和控件，不会自动点击或修改知到设置。扫描结果不保证能突破知到内置的1.5×限制。"
+            textSize = 13f
+            setPadding(0, 20, 0, 0)
+        })
         setContentView(layout)
     }
 
     private fun refreshSessions() {
         try {
             val manager = getSystemService(MEDIA_SESSION_SERVICE) as MediaSessionManager
-            controllers = manager.getActiveSessions(
-                ComponentName(this, SpeedNotificationListener::class.java)
-            )
+            controllers = manager.getActiveSessions(ComponentName(this, SpeedNotificationListener::class.java))
             status.text = if (controllers.isEmpty()) {
-                "没有检测到可访问的媒体会话。请确认通知使用权已开启，并让知到课程视频正在播放。"
+                "没有检测到可访问的媒体会话。"
             } else {
-                "检测到 ${controllers.size} 个媒体会话：\n" +
-                    controllers.joinToString("\n") {
-                        "• ${it.packageName}（播放状态：${it.playbackState?.state ?: "未知"}）"
-                    }
+                "检测到 ${controllers.size} 个媒体会话：\n" + controllers.joinToString("\n") {
+                    "• ${it.packageName}（播放状态：${it.playbackState?.state ?: "未知"}）"
+                }
             }
         } catch (e: SecurityException) {
-            status.text = "尚未获得通知使用权。请点击上方按钮开启权限，然后返回本工具。"
+            status.text = "尚未获得通知使用权，请开启后重试。"
         } catch (e: Exception) {
             status.text = "检查失败：${e.message ?: "未知原因"}"
         }
@@ -86,21 +87,13 @@ class MainActivity : Activity() {
     private fun applySpeed(speed: Float) {
         if (controllers.isEmpty()) refreshSessions()
         if (controllers.isEmpty()) {
-            Toast.makeText(this, "没有可控制的媒体会话，请先检查媒体会话。", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "没有可控制的媒体会话。", Toast.LENGTH_LONG).show()
             return
         }
-        var success = false
-        controllers.forEach { controller ->
-            try {
-                controller.transportControls.setPlaybackSpeed(speed)
-                success = true
-            } catch (_: Exception) { }
+        var sent = false
+        controllers.forEach {
+            try { it.transportControls.setPlaybackSpeed(speed); sent = true } catch (_: Exception) {}
         }
-        Toast.makeText(
-            this,
-            if (success) "已发送 ${speed}× 控制请求；请回到知到观察是否生效。"
-            else "发送失败：知到可能不支持外部倍速控制。",
-            Toast.LENGTH_LONG
-        ).show()
+        Toast.makeText(this, if (sent) "已发送 ${speed}× 请求；不代表知到一定会接受。" else "发送失败。", Toast.LENGTH_LONG).show()
     }
 }
