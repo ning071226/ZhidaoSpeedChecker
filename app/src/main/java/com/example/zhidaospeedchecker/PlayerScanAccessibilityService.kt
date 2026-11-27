@@ -4,7 +4,22 @@ import android.accessibilityservice.AccessibilityService
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 
-class PlayerScanAccessibilityService : AccessibilityService() {\n    companion object {\n        @Volatile var instance: PlayerScanAccessibilityService? = null\n            private set\n    }\n\n    override fun onServiceConnected() {\n        super.onServiceConnected()\n        instance = this\n    }\n\n    override fun onDestroy() {\n        instance = null\n        super.onDestroy()\n    }
+class PlayerScanAccessibilityService : AccessibilityService() {
+    companion object {
+        @Volatile var instance: PlayerScanAccessibilityService? = null
+            private set
+    }
+
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        instance = this
+    }
+
+    override fun onDestroy() {
+        instance = null
+        super.onDestroy()
+    }
+
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
     override fun onInterrupt() {}
 
@@ -23,6 +38,6 @@ class PlayerScanAccessibilityService : AccessibilityService() {\n    companion o
         }
         walk(root, 0)
         return if (lines.isEmpty()) "当前页面没有读取到可识别的文字或控件。播放器可能使用了无法读取的自定义界面。"
-        else "读取到 ${'$'}{lines.size} 条界面信息：\n" + lines.joinToString("\n")
+        else "读取到 ${lines.size} 条界面信息：\\n" + lines.joinToString("\\n")
     }
 }
