@@ -4,5 +4,4 @@
     android:accessibilityFeedbackType="feedbackGeneric"
     android:notificationTimeout="100"
     android:canRetrieveWindowContent="true"
-    android:description="@string/player_scan_accessibility_description"
     android:accessibilityFlags="flagReportViewIds" />
