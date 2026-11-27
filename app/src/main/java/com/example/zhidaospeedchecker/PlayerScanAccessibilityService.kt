@@ -4,7 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 
-class PlayerScanAccessibilityService : AccessibilityService() {
+class PlayerScanAccessibilityService : AccessibilityService() {\n    companion object {\n        @Volatile var instance: PlayerScanAccessibilityService? = null\n            private set\n    }\n\n    override fun onServiceConnected() {\n        super.onServiceConnected()\n        instance = this\n    }\n\n    override fun onDestroy() {\n        instance = null\n        super.onDestroy()\n    }
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
     override fun onInterrupt() {}
 
